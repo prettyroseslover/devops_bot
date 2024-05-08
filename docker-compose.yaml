@@ -37,6 +37,7 @@ services:
     environment: # стандартные опции образа постгрес для создания пользователя и бд
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+    container_name: "${DB_HOST}"
   db_repl:
     build: 
       context: ./db_repl # or image: db_repl_image

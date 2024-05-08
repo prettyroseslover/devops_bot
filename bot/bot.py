@@ -315,7 +315,7 @@ def sshCommand(cmd):
 
 
 def getLogsCommand(update: Update, context):
-    cmd = "cat /var/log/postgresql/postgresql-15-main.log | grep repl | tail -n 10"
+    cmd = "cat /var/log/postgresql/postgresql.log | grep repl | tail -n 10"
     update.message.reply_text(sshCommand(cmd))
 
 
