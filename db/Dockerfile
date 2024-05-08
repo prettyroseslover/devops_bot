@@ -23,7 +23,7 @@ RUN echo "local all postgres peer" >> /etc/postgresql/pg_hba.conf
 RUN echo "host all all 0.0.0.0/0 password" >> /etc/postgresql/pg_hba.conf
 
 RUN echo "archive_mode = on\narchive_command = 'cp %p /oracle/pg_data/archive/%f'\nmax_wal_senders = 10\nwal_level = replica\nwal_log_hints = on\nlog_replication_commands = on" >> /etc/postgresql/postgresql.conf
-RUN echo "host replication $DB_REPL_USER $DB_REPL_HOST scram-sha-256" >> /etc/postgresql/pg_hba.conf
+RUN echo "host replication $DB_REPL_USER $DB_REPL_HOST trust" >> /etc/postgresql/pg_hba.conf
 
 RUN mkdir -p /oracle/pg_data/archive/
 RUN chown postgres:postgres /oracle/pg_data/archive/
