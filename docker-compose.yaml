@@ -1,0 +1,66 @@
+version: "3"
+services:
+  bot:
+    # or image: bot_image
+    build:
+        context: ./bot
+    environment:
+      - TOKEN=${TOKEN}
+      - RM_HOST=${RM_HOST}
+      - RM_PORT=${RM_PORT}
+      - RM_USER=${RM_USER}
+      - RM_PASSWORD=${RM_PASSWORD}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_REPL_USER=${DB_REPL_USER}
+      - DB_REPL_PASSWORD=${DB_REPL_PASSWORD}
+      - DB_REPL_HOST=${DB_REPL_HOST}
+      - DB_REPL_PORT=${DB_REPL_PORT}
+  db:
+    # build: ./db # or image: db_image
+    build:
+        context: ./db
+        args: 
+          DB_REPL_USER: ${DB_REPL_USER}
+          DB_REPL_PASSWORD: ${DB_REPL_PASSWORD}
+          DB_REPL_HOST: 10.5.0.0/24
+          DB_PORT: ${DB_PORT}
+          # DB_USER: ${DB_USER}
+          # DB_PASSWORD: ${DB_PASSWORD}
+          DB_DATABASE: ${DB_DATABASE}
+    # volumes:
+      # - pg_data:/var/lib/postgresql/data
+      # - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment: # стандартные опции образа постгрес для создания пользователя и бд
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    networks:
+      postgres-replication:
+        ipv4_address: 10.5.0.4
+  db_repl:
+    build: 
+      context: ./db_repl # or image: db_repl_image
+      network: host
+      args: 
+        DB_REPL_USER: ${DB_REPL_USER}
+        DB_REPL_PASSWORD: ${DB_REPL_PASSWORD}
+        DB_REPL_HOST: ${DB_REPL_HOST}
+        DB_REPL_PORT: ${DB_REPL_PORT}
+    environment:
+      - DB_HOST=10.5.0.4
+      - DB_PORT=${DB_PORT}
+      - DB_REPL_USER=${DB_REPL_USER}
+      - DB_REPL_PASSWORD=${DB_REPL_PASSWORD}
+    networks:
+      postgres-replication:
+        ipv4_address: 10.5.0.2
+volumes:
+  pg_data:
+networks:
+  postgres-replication:
+    ipam:
+      config:
+        - subnet: 10.5.0.0/24
