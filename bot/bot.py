@@ -1,4 +1,4 @@
-import logging, re, os, paramiko, shlex
+import logging, re, os, paramiko, shlex, subprocess
 
 import psycopg2
 from psycopg2 import Error
@@ -277,7 +277,10 @@ def getEmailsCommand(update: Update, context):
         result = "\n".join(list(map(lambda row: row[1], data)))
         cursor.close()
         connection.close()
-        update.message.reply_text(result)
+        if result == '': 
+            update.message.reply_text("Пока что записей нет!")
+        else:
+            update.message.reply_text(result)
 
 
 def getPhoneNumbersCommand(update: Update, context):
@@ -291,7 +294,10 @@ def getPhoneNumbersCommand(update: Update, context):
         result = "\n".join(list(map(lambda row: row[1], data)))
         cursor.close()
         connection.close()
-        update.message.reply_text(result)
+        if result == '': 
+            update.message.reply_text("Пока что записей нет!")
+        else:
+            update.message.reply_text(result)
 
 
 def sshCommand(cmd):
@@ -313,10 +319,13 @@ def sshCommand(cmd):
     return data
 
 
-
 def getLogsCommand(update: Update, context):
-    cmd = "cat /var/log/postgresql/postgresql.log | grep repl | tail -n 10"
-    update.message.reply_text(sshCommand(cmd))
+    cmd = "cat /var/log/postgresql/postgresql.log | grep repl | tail -n 15"
+    res = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
+    if res.returncode != 0:
+        update.message.reply_text("Не могу открыть файл с логами!")
+
+    update.message.reply_text(res.stdout.decode().strip('\n'))
 
 
 def main():
