@@ -18,9 +18,6 @@ services:
       - DB_DATABASE=${DB_DATABASE}
     volumes:
       - pg_logs:/var/log/
-    networks:
-      - default
-      - outerspace
   db:
     # build: ./db # or image: db_image
     image: 192.168.0.103:5000/db_image:${version:-latest}
@@ -53,5 +50,3 @@ volumes:
 networks:
   default:
     name: interspace
-  outerspace:
-    driver: host
