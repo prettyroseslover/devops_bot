@@ -9,6 +9,8 @@ RUN mkdir -p /oracle/pg_data/archive/
 RUN chown postgres:postgres /oracle/pg_data/archive/
 
 ENTRYPOINT [ "bash", "-c", "\
+mkdir -p /var/log/postgresql/ \n\
+chown postgres:postgres /var/log/postgresql/ \n\
 envsubst < /docker-entrypoint-initdb.d/init.sql.raw > /docker-entrypoint-initdb.d/init.sql \n\
 cat <<EOF > /etc/postgresql/postgresql.conf \n\
 listen_addresses = '*' \n\
