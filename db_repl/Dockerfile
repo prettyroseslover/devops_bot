@@ -1,16 +1,17 @@
 FROM postgres:15.6
 
-ARG DB_REPL_HOST
-ARG DB_REPL_PORT
-ARG DB_HOST
-
-
-RUN mkdir -p /etc/postgresql/
-RUN echo "listen_addresses = 'localhost, $DB_REPL_HOST'" >> /etc/postgresql/postgresql.conf
-RUN echo "port = $DB_REPL_PORT" >> /etc/postgresql/postgresql.conf
-
- 
+RUN mkdir -p /etc/postgresql/ 
 RUN chmod 750 /var/lib/postgresql/data
-USER postgres
 
-CMD echo "$DB_REPL_PASSWORD" | pg_basebackup -v -R -h $DB_HOST -p $DB_PORT -U $DB_REPL_USER -W -P -D /var/lib/postgresql/data && postgres -c config_file=/etc/postgresql/postgresql.conf
+ENTRYPOINT [ "bash", "-c", "\
+cat <<EOF > /etc/postgresql/postgresql.conf \n\
+listen_addresses = 'localhost, ${DB_REPL_HOST}' \n\
+port = ${DB_REPL_PORT} \n\
+EOF\n\
+rm -rf /var/lib/postgresql/data/* \n\
+echo ${DB_REPL_PASSWORD} | pg_basebackup -v -R \\\n\
+  -h ${DB_HOST} -p ${DB_PORT} -U ${DB_REPL_USER} -W -P \\\n\
+  -D /var/lib/postgresql/data \n\
+su - postgres \n\
+docker-entrypoint.sh $@"]
+CMD ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
