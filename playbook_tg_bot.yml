@@ -14,8 +14,10 @@
     - name: Install Python & all
       ansible.builtin.apt:
         name: 
-          - python3
+          - python3.11
           - python3-pip
+          - python3-virtualenv
+          - git
         state: latest
       become: yes
 
@@ -42,7 +44,7 @@
     - name: Install dependencies
       ansible.builtin.pip:
         virtualenv: "{{bot_directory}}/bot/venv"
-        virtualenv_command: python3 -m venv
+        virtualenv_python: python3.11
         requirements: "{{bot_directory}}/bot/requirements.txt"
 
     - name: Setup Bot environment
