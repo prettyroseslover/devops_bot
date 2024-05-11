@@ -21,8 +21,8 @@ invent: # Настройки для inventory
 
 telegram: # Для бота
   token: <Токен для бота>
-databases: # Для БД
-  master:
+databases: 
+  master: # Для БД
     user: <Пользовтель db>
     password: <Пароль>
     database: <Название базы данных>
