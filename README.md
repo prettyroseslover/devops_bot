@@ -42,3 +42,5 @@ remote_monitoring: # Для удаленной машины, которую мо
 ```bash
 ansible-playbook playbook_tg_bot.yml -i inventory -e @secrets.yaml
 ```
+
+> :warning: **Ubuntu**: Установка зависимостейчерез playbook реализована именно для apt-дистрибутивов!
