@@ -1,0 +1,62 @@
+# Настройка бота
+- name: Bot Playbook
+  hosts: bot
+  vars:
+    bot_directory: /srv/tg_bot
+  tasks:
+    - name: Create working directory
+      ansible.builtin.file:
+        path: "{{bot_directory}}"
+        state: directory
+        owner: "{{ansible_user}}"
+        mode: 0777
+      become: yes
+    - name: Git clone bot repo
+      ansible.builtin.git:
+        repo: https://github.com/prettyroseslover/devops_bot.git
+        version: docker
+        dest: "{{bot_directory}}"
+        clone: true
+    - name: Install virualenv
+      ansible.builtin.apt:
+        name: python3-venv
+      become: yes
+    - name: Install dependencies
+      ansible.builtin.pip:
+        virtualenv: "{{bot_directory}}/bot/venv"
+        virtualenv_command: python3 -m venv
+        requirements: "{{bot_directory}}/bot/requirements.txt"
+    - name: Setup Bot environment
+      ansible.builtin.copy:
+        content: |
+          TOKEN={{telegram.token}}
+          DB_USER={{databases.master.user}}
+          DB_PASSWORD={{databases.master.password}}
+          DB_HOST={{invent.db.host}}
+          DB_PORT={{databases.master.port}}
+          DB_DATABASE={{databases.master.database}}
+          RM_USER={{databases.replica.user}}
+          RM_PASSWORD={{databases.replica.password}}
+          RM_HOST={{remote_monitoring.host}}
+          RM_PORT={{remote_monitoring.port}}
+          RM_USER={{remote_monitoring.user}}
+          RM_PASSWORD={{remote_monitoring.password}}
+        dest: "{{bot_directory}}/bot/.env"
+
+# # Настройка мастер-бд
+# - name: DB Playbook
+#   hosts: db
+#   vars_prompt:
+#     - name: ansible_password
+#       prompt: Enter password for DB Host
+#   tasks:
+#     - name: 
+
+# # Настройка реплики
+# - name: DB REPL Playbook
+#   hosts: db_repl
+#   vars_prompt:
+#     - name: ansible_password
+#       prompt: Enter password for DB REPL Host
+#   tasks:
+#     - name: 

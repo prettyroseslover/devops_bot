@@ -1,8 +1,8 @@
 [bot]
-192.168.0.108
+bot_host ansible_host="{{invent.bot.host}}" ansible_user="{{invent.bot.user}}" ansible_password="{{invent.bot.password}}"
 
 [db]
-192.168.0.108
+db_host ansible_host="{{invent.db.host}}" ansible_user="{{invent.db.user}}" ansible_password="{{invent.db.password}}"
 
 [db_repl]
-192.168.0.103
+db_repl_host ansible_host="{{invent.db_repl.host}}" ansible_user="{{invent.db_repl.user}}" ansible_password="{{invent.db_repl.password}}"
