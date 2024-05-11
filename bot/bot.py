@@ -321,11 +321,11 @@ def sshCommand(cmd):
 
 def getLogsCommand(update: Update, context):
     cmd = "cat /var/log/postgresql/postgresql.log | grep repl | tail -n 15"
-    res = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
-    if res.returncode != 0:
+    res = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if res.returncode != 0 or res.stderr.decode() != "":
         update.message.reply_text("Не могу открыть файл с логами!")
-
-    update.message.reply_text(res.stdout.decode().strip('\n'))
+    else:
+        update.message.reply_text(res.stdout.decode().strip('\n'))
 
 
 def main():
