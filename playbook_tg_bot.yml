@@ -35,23 +35,124 @@
           DB_HOST={{invent.db.host}}
           DB_PORT={{databases.master.port}}
           DB_DATABASE={{databases.master.database}}
-          RM_USER={{databases.replica.user}}
-          RM_PASSWORD={{databases.replica.password}}
           RM_HOST={{remote_monitoring.host}}
           RM_PORT={{remote_monitoring.port}}
           RM_USER={{remote_monitoring.user}}
           RM_PASSWORD={{remote_monitoring.password}}
         dest: "{{bot_directory}}/bot/.env"
 
-# # Настройка мастер-бд
-# - name: DB Playbook
-#   hosts: db
-#   vars_prompt:
-#     - name: ansible_password
-#       prompt: Enter password for DB Host
-#   tasks:
-#     - name: 
-
+# Настройка мастер-бд
+- name: DB Playbook
+  hosts: db
+  vars:
+    archive_dir: "/oracle/pg_data/archive/"
+  tasks:
+    - name: Install PostgreSQL
+      ansible.builtin.apt:
+        name: 
+          - postgresql
+          - postgresql-contrib
+          - jq # Для парсинга json
+        state: latest
+      become: yes
+    - name: Install psycopg
+      ansible.builtin.pip:
+        name: psycopg2-binary
+      become: yes
+    - name: Create archive directory
+      ansible.builtin.file:
+        path: "{{archive_dir}}"
+        state: directory
+        owner: "postgres"
+        mode: 0750
+      become: yes
+    - block:
+      - name: Find out if PostgreSQL is initialized
+        ansible.builtin.command: 
+          cmd: "pg_ctlcluster 14 main status"
+        register: postgres_status
+        ignore_errors: true
+        become: yes
+      - name: Initialize PostgreSQL
+        ansible.builtin.command: 
+          cmd: "pg_createcluster 14 main"
+        when: postgres_status.stdout.find('specified cluster \'14 main\' does not exist') != -1
+        become: yes
+      - name: Get pg_hba path
+        ansible.builtin.shell: "pg_lsclusters --json | jq '.[].config.hba_file' | awk '{gsub(/\"/, \"\", $1); print $1}'"
+        register: pg_hba_path
+      - name: Get postgresql.conf path
+        ansible.builtin.shell: "pg_lsclusters --json | jq '.[].configdir' | awk '{gsub(/\"/, \"\", $1); print $1}'"
+        register: pg_conf_path
+      - name: Setup pg_hba.conf
+        ansible.builtin.blockinfile:
+          create: true
+          path: "{{pg_hba_path.stdout}}"
+          block: | 
+            local all {{databases.master.user}} peer
+            host all all 0.0.0.0/0 password
+            host replication {{databases.replica.user}} {{invent.db_repl.host}}/24 trust
+        become: yes
+      - name: Setup postgresql.conf
+        ansible.builtin.blockinfile:
+          create: true
+          path: "{{pg_conf_path.stdout}}/postgresql.conf"
+          block: | 
+            listen_addresses = '*'
+            port = {{databases.master.port}}
+            log_destination = 'stderr'
+            logging_collector = on
+            log_directory = '/var/log/postgresql/'
+            log_filename = 'postgresql.log'
+            archive_mode = on
+            archive_command = 'cp %p {{archive_dir}}/%f'
+            max_wal_senders = 10
+            wal_level = replica
+            wal_log_hints = on
+            log_replication_commands = on
+        become: yes
+      - name: Restart PostgreSQL
+        ansible.builtin.service:
+          name: postgresql@14-main
+          state: restarted
+        become: yes
+        become_user: root
+      - name: Create app database
+        community.postgresql.postgresql_db:
+          state: present
+          name: "{{databases.master.database}}"
+        become: yes
+      - name: Create table Emails
+        community.postgresql.postgresql_table:
+          table: emails
+          db: "{{databases.master.database}}"
+          columns:
+           - id serial primary key
+           - email varchar(30) not null
+        become: yes
+      - name: Create table PhoneNumbers
+        community.postgresql.postgresql_table:
+          table: phonenumbers
+          db: "{{databases.master.database}}"
+          columns:
+           - id serial primary key
+           - phone varchar(20) not null
+        become: yes
+      - name: Password for db_user
+        community.postgresql.postgresql_user:
+          name: "{{databases.master.user}}"
+          password: "{{databases.master.password}}"
+        become: yes
+      - name: Create db_repl_user
+        community.postgresql.postgresql_user:
+          name: "{{databases.replica.user}}"
+          password: "{{databases.replica.password}}"
+          role_attr_flags: REPLICATION,LOGIN
+        become: yes
+          
+      become_user: postgres
+  
+   
 # # Настройка реплики
 # - name: DB REPL Playbook
 #   hosts: db_repl
